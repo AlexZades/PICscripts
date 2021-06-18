@@ -1,0 +1,53 @@
+###############
+#### Setup ####
+###############
+
+wg_width = 300e-9;
+wg_height = 220e-9;
+
+cladding_height = 5e-6;
+
+wavelength = 493e-9;
+wavelength_range = 100e-9;
+
+mat_SI = "Si (Silicon) - Palik";
+mat_clad = "SiO2 (Glass) - Palik";
+mat_wg   =  "Si3N4 (Silicon Nitride) - Phillip";
+
+padding = 5e-6;
+#### Coupler Dimensions ####
+
+L1 = 10e-6; #Length of waveguides before phase control section
+
+L2 = 4e-6; #Length of phase control section
+
+L3 = 7e-6; #Length of waveguides after phase control section
+
+L_io = 1e-6; #Length of IO waveguides;
+
+taper_in = 1e-6; #Length of taper into phase control section
+
+taper_out = 1e-6; #Length of taper out of phase control section
+
+asym_offset_top = 100e-9; # change in width of top waveguide
+
+asym_offset_bot = 100e-9; # change in width of bottom waveguide
+
+gap = 200e-9; #gap between waveguides
+
+R = 5e-6; #Radius of curved waveguide sections
+
+#### Options ####
+
+symetric_tapers = false;
+
+symetric_offset = false;
+
+complex_taper = true;
+
+#### 
+
+if(asym_offset_bot > wg_width){
+ ?"Error: asym offset for bottom waveguide is greater than the width of the orignal waveguide. This will produce unexpeted results";   
+ break;
+}

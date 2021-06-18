@@ -1,0 +1,242 @@
+#This script builds the geometry of a BDC
+deleteall;
+skip_setup = false;
+
+if(!skip_setup){
+    
+BDC_Setup;
+
+}
+##################
+#### Geometry ####
+##################
+Z = wg_height/2;
+
+if(symetric_tapers){
+    taper_out = taper_in;
+}
+
+if(symetric_offset){
+    asym_offset_bot = asym_offset_top;
+}
+
+L_min = -1*(L1+L2/2 + R + taper_in + wg_width/2 + padding);
+L_max = (L3+L2/2 + R + taper_out + wg_width/2 + padding);
+
+W_max = 2*R + gap + 2*wg_width + padding;
+
+addrect;
+set('name','Substrate');
+set('material', mat_SI);
+set('alpha', 0.2);
+set("x",0);
+set("y",0);
+set("z",(-cladding_height) - 0.5e-6);
+set("x min", L_min);
+set("x max", L_max);
+set("y span", W_max);
+set("z span", 1e-6);
+set('override mesh order from material database', true);
+set('mesh order', 4);
+copy;
+set('name','BOX');
+set("z",-1*cladding_height/2);
+set("z span", cladding_height);
+set('material', mat_clad);
+copy;
+set('name','Cladding');
+set("z",cladding_height/2);
+set("z span", cladding_height);
+set('material', mat_clad);
+
+x_off_L1 = -1*((L1+L2)/2 + taper_in);
+y_off_wg = gap/2 + wg_width/2;
+addrect;
+set('name','L1 Waveguide Bot');
+set("x",x_off_L1);
+set("y",-y_off_wg);
+set("z",Z);
+set("x span",L1);
+set("y span",wg_width);
+set("z span",wg_height);
+set('material', mat_wg);
+
+copy;
+set('name','L1 Waveguide Top');
+set("y",y_off_wg);
+if (complex_taper){
+ 
+ y_L2_top = gap/2 + wg_width/2;   
+ y_L2_bot = -gap/2 - wg_width/2;   
+    
+}
+else{
+    
+ y_L2_top = gap/2 + wg_width/2 + asym_offset_top/2;   
+ y_L2_bot = -gap/2 - wg_width/2 - asym_offset_bot/2; 
+}
+copy;
+set('name','L2 Waveguide Bot');
+set("x",0);
+set("y",y_L2_bot);
+set("x span",L2);
+set("y span", wg_width - asym_offset_bot);
+copy;
+set('name','L2 Waveguide Top');
+set("x",0);
+set("y",y_L2_top);
+set("x span",L2);
+set("y span", wg_width + asym_offset_top);
+
+x_off_L3 = ((L3+L2)/2 + taper_out);
+
+copy;
+set('name','L3 Waveguide Bot');
+set("y",-y_off_wg);
+set("x",x_off_L3);
+set("x span", L3);
+set("y span", wg_width);
+
+copy;
+set('name','L3 Waveguide Top');
+set("y",y_off_wg);
+
+## Tapers ##
+if(complex_taper){
+    vtx_top_in = [-(taper_in/2),wg_width/2;
+    taper_in/2,(wg_width+asym_offset_top)/2;
+    taper_in/2,-1*(wg_width+asym_offset_top)/2;
+    -(taper_in/2),-wg_width/2];
+    
+    vtx_top_out = [(taper_out/2),wg_width/2;
+    -(taper_out/2),(wg_width+asym_offset_top)/2;
+    -(taper_out/2),-1*(wg_width+asym_offset_top)/2;
+    (taper_out/2),-wg_width/2]; 
+    
+    vtx_bot_in = [-(taper_in/2),wg_width/2;
+    taper_in/2,(wg_width-asym_offset_bot)/2;
+    taper_in/2,-1*(wg_width-asym_offset_bot)/2;
+    -(taper_in/2),-wg_width/2]; 
+    
+    vtx_bot_out = [(taper_out/2),wg_width/2;
+    -(taper_out/2),(wg_width-asym_offset_bot)/2;
+    -(taper_out/2),-1*(wg_width-asym_offset_bot)/2;
+    (taper_out/2),-wg_width/2]; 
+}
+else{
+    
+    vtx_top_in = [-(taper_in/2),wg_width/2;
+    taper_in/2,(wg_width/2+asym_offset_top);
+    taper_in/2,-1*(wg_width)/2;
+    -(taper_in/2),-wg_width/2];
+    
+    vtx_top_out = [(taper_out/2),wg_width/2;
+    -(taper_out/2),(wg_width/2+asym_offset_top);
+    -(taper_out/2),-1*(wg_width)/2;
+    (taper_out/2),-wg_width/2]; 
+    
+    vtx_bot_in = [-(taper_in/2),wg_width/2;
+    taper_in/2,(wg_width/2-asym_offset_bot);
+    taper_in/2,-1*(wg_width)/2;
+    -(taper_in/2),-wg_width/2]; 
+    
+    vtx_bot_out = [(taper_out/2),wg_width/2;
+    -(taper_out/2),(wg_width/2-asym_offset_bot);
+    -(taper_out/2),-1*(wg_width)/2;
+    (taper_out/2),-wg_width/2];  
+    
+    
+    
+    
+}
+
+x_taper_in = -(taper_in+L2)/2;
+x_taper_out = (taper_out+L2)/2;
+addpoly;
+set("name","Taper Top In");
+set("vertices",vtx_top_in);
+set("material",mat_wg);
+set("x",x_taper_in);
+set("y",y_off_wg);
+set("z",Z);
+set("z span",wg_height);
+
+copy;
+set("name","Taper Top Out");
+set("vertices",vtx_top_out);
+set("x",x_taper_out);
+set("y",y_off_wg);
+
+copy;
+set("name","Taper Bot Out");
+set("vertices",vtx_bot_out);
+set("x",x_taper_out);
+set("y",-y_off_wg);
+
+copy;
+set("name","Taper Bot In");
+set("vertices",vtx_bot_in);
+set("x",x_taper_in);
+set("y",-y_off_wg);
+
+#### curved waveguides ####
+x_ring_left = -(L1+L2/2+taper_in);
+x_ring_right = (L3+L2/2+taper_in);
+y_ring = (R+gap/2 + wg_width/2);
+
+addring;
+set("name", "Curved Waveguide Top Left");
+set("material",mat_wg);
+set("x", x_ring_left);
+set("y", y_ring);
+set("z", Z);
+set("z span", wg_height);
+set("outer radius",R+wg_width/2);
+set("inner radius",R-wg_width/2);
+set("theta start", 180);
+set("theta stop", 270);
+
+copy; 
+set("name", "Curved Waveguide Bot Left");
+set("y", -y_ring);
+set("theta start", 90);
+set("theta stop", 180);
+
+copy; 
+set("name", "Curved Waveguide Bot Right");
+set("x", x_ring_right);
+set("theta start", 0);
+set("theta stop", 90);
+
+copy; 
+set("name", "Curved Waveguide Top Right");
+set("y", y_ring);
+set("theta start", 270);
+set("theta stop", 0);
+
+#### IO waveguides ####
+x_io_left = x_ring_left-R;
+x_io_right = x_ring_right+R;
+y_io = y_ring + L_io/2;
+addrect; 
+set("name","IO Waveguide Top Left");
+set("material", mat_wg);
+set("x",x_io_left);
+set("y",y_io);
+set("z",Z);
+set("z span",wg_height);
+set("x span",wg_width);
+set("y span",L_io);
+
+copy;
+set("name","IO Waveguide Top Right");
+set("x",x_io_right);
+
+copy;
+set("name","IO Waveguide Bot Right");
+set("y",-y_io);
+
+copy;
+set("name","IO Waveguide Bot Left");
+set("x",x_io_left);
+
