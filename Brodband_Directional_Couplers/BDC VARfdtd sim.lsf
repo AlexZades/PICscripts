@@ -1,2 +1,129 @@
 BDC_Setup;
 BDC_Constructor;
+
+
+######################
+#### Sim Settings ####
+######################
+
+simulation_height = 2e-6;
+
+mesh_accuracy = 1;
+
+MonitorSpanX = 2e-6;
+
+######################
+addvarfdtd;
+set("x",0);
+set("y",0);
+set("x min", L_min+padding/2);
+set("x max", L_max-padding/2);
+set("y span", W_max-padding+L_io);
+set("z span", simulation_height);
+set("mesh accuracy", mesh_accuracy);
+set("z", wg_height/2);
+
+cross_x_left = -(L1+L2/2)-get("x");
+cross_x_right = L3+L2/2-get("x");
+cross_y = (gap+wg_width)/2;
+set("test points", [[cross_x_left;-1*cross_y],
+    [cross_x_left;cross_y],
+    [cross_x_right;cross_y],
+    [cross_x_right;-1*cross_y]]);
+    
+
+addmodesource;   
+set("name", "Input Source 1");
+set("injection axis", "y");
+set("center wavelength",wavelength);
+set("x",x_io_left);
+set("y",-y_io);
+set("x span",MonitorSpanX);  
+
+copy;
+set("name", "Input Source 2");
+set("x",x_io_left);
+set("y",y_io);
+set("direction","backward");
+set("enabled",0);
+
+copy;
+set("name", "Input Source 3");
+set("x",x_io_right);
+set("y",y_io);
+set("direction","backward");
+set("enabled",0);
+
+copy;
+set("name", "Input Source 4");
+set("x",x_io_right);
+set("y",-y_io);
+set("enabled",0);
+
+addprofile;   
+set("name", "Mode Monitor DFT 1");
+set('monitor type', 'Linear x');
+set("x",x_io_left);
+set("y",-y_io);
+set("z",wg_height/2);
+set("x span",MonitorSpanX); 
+
+
+
+copy;
+set("name", "Mode Monitor DFT 2");
+set("x",x_io_left);
+set("y",y_io);
+
+copy;
+set("name", "Mode Monitor DFT 3");
+set("x",x_io_right);
+set("y",y_io);
+
+copy;
+set("name", "Mode Monitor DFT 4");
+set("x",x_io_right);
+set("y",-y_io);
+
+addmodeexpansion;   
+set("name", "Mode Monitor 1");
+set('monitor type', 'Linear x');
+set("x",x_io_left);
+set("y",-y_io);
+set("z",wg_height/2);
+set("x span",MonitorSpanX); 
+setexpansion('exp 1', 'Mode Monitor DFT 1');
+
+copy;
+set("name", "Mode Monitor 2");
+set("x",x_io_left);
+set("y",y_io);
+setexpansion('exp 1', 'Mode Monitor DFT 2');
+ 
+copy;
+set("name", "Mode Monitor 3");
+set("x",x_io_right);
+set("y",y_io);
+setexpansion('exp 1', 'Mode Monitor DFT 3');
+
+copy;
+set("name", "Mode Monitor 4");
+set("x",x_io_right);
+set("y",-y_io);
+setexpansion('exp 1', 'Mode Monitor DFT 4');
+
+select('varFDTD');
+set("x0",x_io_left-get("x"));
+set("y0",-y_io);
+
+x_off_sim = get("x");
+addmesh;
+set("x",x_off_sim);
+set("y",0);
+set("z",Z);
+set("z span",wg_height*2);
+set("x span",L1+L2+L3+taper_in+taper_out);
+set("y span",wg_width*2 + gap + asym_offset_top);
+set("dx",20e-9);
+set("dy",20e-9);
+set("dz",20e-9);

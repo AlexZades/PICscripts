@@ -1,6 +1,6 @@
 #This script builds the geometry of a BDC
 deleteall;
-skip_setup = false;
+skip_setup = true;
 
 if(!skip_setup){
     
