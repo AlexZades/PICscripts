@@ -1,0 +1,395 @@
+switchtolayout;
+deleteall;
+
+
+#### Setup ####
+N = 9; #inputs
+M = 9; #outputs
+
+lambda = 1550e-9; 
+
+wg_width = 500e-9; 
+wg_height = 220e-9;
+#waveguide dimensions
+
+R = 35e-6; 
+#Slab reigion width
+
+theta = 8; 
+#angle to use for R calculation
+
+use_angle = false; 
+#Calculates the R based on input angle
+taper = true;
+#turns on tapers
+movie = false;
+monitor = true;
+
+taper_width = 1.5e-6;
+taper_length = 15e-6;
+#taper dimentions
+
+neff = 2.85; #slab effective index
+
+cladding_width = 1000e-6; 
+cladding_length = 1000e-6;
+#Dimensions of the substrate and BOX
+
+
+theta_max = 35; 
+#max angle to use for free space reigon
+
+angle_multiplier = 1; #depreciated
+
+wg_offset = 50e-9;
+#how much to move waveguides into slab reigon 
+
+main_material = "Si (Silicon) - Palik";
+
+port_distance = 15e-6; 
+#distance of ports from free space reigon
+mesh_accuracy = 3;
+#accuracy of FDTD auto mesh
+
+port_width = 2e-6;
+port_height = 2e-6;
+###############
+
+#calculates R if use_angle is on
+if(use_angle){
+ R = lambda/(neff*abs(sin(theta*pi/180))^2);   
+} 
+
+####################
+#Add Basic Geometry#
+####################
+
+addrect;
+set("name", "Substrate");
+set("x", 0);
+set("y", 0);
+set("z", -5e-6);
+set("x span", cladding_width);
+set("y span", cladding_length);
+set("z span", 2e-6);
+set("material", "Si (Silicon) - Palik");
+
+addrect;
+set("name", "BOX");
+set("x", 0);
+set("y", 0);
+set("z", -2e-6);
+set("x span", cladding_width);
+set("y span", cladding_length);
+set("z span", 4e-6);
+set("material", "SiO2 (Glass) - Palik");
+
+addrect;
+set("name", "Cladding");
+set("x", 0);
+set("y", 0);
+set("z", 2e-6);
+set("x span", cladding_width);
+set("y span", cladding_length);
+set("z span", 4e-6);
+set("material", "SiO2 (Glass) - Palik");
+set("alpha", 0.2);
+
+##### Make Slab #####
+
+#creates two rings to act as the confocal
+#arcs of the star coupler
+addring;
+set("name", "Slab Left curve");
+set("x", R/2);
+set("y", 0);
+set("z", wg_height/2);
+set("z span",wg_height);
+set("inner radius", 0 );
+set("outer radius", R);
+set("theta start", 180-theta_max);
+set("theta stop", 180+theta_max);
+set("material", main_material);
+
+addring;
+set("name", "Slab Right curve");
+set("x", -R/2);
+set("y", 0);
+set("z", wg_height/2);
+set("z span",wg_height);
+set("inner radius", 0 );
+set("outer radius", R);
+set("theta start", -theta_max);
+set("theta stop", theta_max);
+set("material", main_material);
+
+addrect;
+set("name", "Slab Center");
+set("x", 0);
+set("y", 0);
+set("z", wg_height/2);
+set("x span", (R*abs(cos(theta_max *pi/180))-R/2)*2);
+set("y span", 2*R*abs(sin(theta_max *pi/180)));
+set("z span",wg_height);
+set("material", main_material);
+
+#### Make Input Waveguides ####
+
+wg_length = cladding_width/2 - 10e-6 - R;
+addrect;
+set("name", "Input Waveguide template");
+set("x", -wg_length/2 - R/2 + wg_offset);
+set("y", 0);
+set("z", wg_height/2);
+set("x span", wg_length);
+set("y span", wg_width);
+set("z span",wg_height);
+set("material", main_material);
+
+#There are several of these for loops for creating
+#each component in the correct position
+
+#for now these are separate for loops
+if(mod(N,2) == 0){
+n0 = -N/2;
+}
+else{
+n0 = -(N-1)/2;
+?n0;
+}
+
+if(mod(M,2) == 0){
+m0 = -M/2;
+}
+else{
+m0 = -(M-1)/2;
+?m0;
+}
+
+for(i = n0; i < N/2; i = i+1){
+ theta = asin(i*sqrt((lambda)/(R*N*neff)))*angle_multiplier;
+ ?theta*180/pi;
+ copy;   
+ set("name", "Input Waveguide "+num2str(i+-1*n0));
+ set("x", -1*(wg_length/2 + R-wg_offset)*cos(theta) + R/2);
+ set("y", (wg_length/2 + R-wg_offset)*sin(theta));
+ set("first axis", "z");
+ set("rotation 1", -theta*(180/pi));
+
+}
+select("Input Waveguide template");
+delete;
+
+#### Make Output Waveguides ####
+
+wg_length = cladding_width/2 - 10e-6 - R;
+addrect;
+set("name", "Output Waveguide Template");
+set("x", wg_length/2 + R/2-wg_offset);
+set("y", 0);
+set("z", wg_height/2);
+set("x span", wg_length);
+set("y span", wg_width);
+set("z span",wg_height);
+set("material", main_material);
+
+
+for(i = m0; i < M/2; i = i+1){
+ theta = asin(i*sqrt((lambda)/(R*M*neff)))*angle_multiplier;
+ ?theta*180/pi;
+ copy;   
+ set("name", "Output Waveguide "+num2str(i+-1*n0));
+ set("x", 1*(wg_length/2 + R-wg_offset)*cos(theta) - R/2);
+ set("y", (wg_length/2 + R-wg_offset)*sin(theta));
+ set("first axis", "z");
+ set("rotation 1", theta*(180/pi));
+
+}
+select("Output Waveguide Template");
+delete;
+
+####################
+#### ADD TAPERS ####
+####################
+
+#### Make Input Tapers ####
+
+if(taper){
+x_in = -1*(R -  wg_offset);
+x_out = -1*(R + taper_length - wg_offset);
+
+y_big = taper_width/2;
+y_small = wg_width/2;
+
+vtx = [x_in,y_big;x_out,y_small;x_out,-y_small;x_in,-y_big]; 
+addpoly;
+set("name", "Input Taper Template");
+set("x", R/2);
+set("y", 0);
+set("z", wg_height/2);
+set("vertices",vtx);
+set("z span",wg_height);
+set("material", main_material);
+
+for(i = n0; i < N/2; i = i+1){
+ theta = asin(i*sqrt((lambda)/(R*N*neff)))*angle_multiplier;
+ copy;   
+ set("name", "Input Taper "+num2str(i+-1*n0));
+ set("first axis", "z");
+ set("rotation 1", -theta*(180/pi));
+}
+select("Input Taper Template");
+delete;
+
+
+#### Make Output Tapers ####
+
+wg_length = cladding_width/2 - 10e-6 - R;
+x_in = 1*(R -  wg_offset);
+x_out = 1*(R + taper_length - wg_offset);
+
+y_big = taper_width/2;
+y_small = wg_width/2;
+
+vtx = [x_in,y_big;x_out,y_small;x_out,-y_small;x_in,-y_big]; 
+addpoly;
+set("name", "Output Taper Template");
+set("x", -R/2);
+set("y", 0);
+set("z", wg_height/2);
+set("vertices",vtx);
+set("z span",wg_height);
+set("material", main_material);
+
+for(i = m0; i < M/2; i = i+1){
+ theta = asin(i*sqrt((lambda)/(R*M*neff)))*angle_multiplier;
+ copy;   
+ set("name", "Output Taper "+num2str(i+-1*n0));
+ set("first axis", "z");
+ set("rotation 1", -theta*(180/pi));
+}
+select("Output Taper Template");
+delete;
+}
+
+###################
+#### Setup Sim ####
+###################
+
+addvarfdtd;
+set("x",0);
+set("y",0);
+set("z", wg_height/2);
+set("x span", (R+port_distance)*2);
+set("y span", (R+port_distance));
+set("mesh accuracy", mesh_accuracy);
+#set("layers",16);
+
+#### Add Input Sources ####
+if(monitor){
+addprofile;
+set("x span",(R+port_distance)*2);
+set("y span", (R+port_distance));
+}
+
+if(movie){
+addmovie;
+set("x span",(R+port_distance)*2);
+set("y span", (R+port_distance));
+set("lock aspect ratio", true);
+set("horizontal resolution", 1920);
+set("scale",0.01);
+}
+#### Add Input Sources ####
+ addmodesource;   
+ set("name", "Input Source Template");
+ set("injection axis", "x");
+ set("x", -port_distance-R+R/2);
+ set("y", 0);
+ set("theta", 0);
+ set("center wavelength",1.55e-6);
+ set("y span", port_width);
+ 
+for(i = n0; i < N/2; i = i+1){
+ theta = asin(i*sqrt((lambda)/(R*N*neff)))*angle_multiplier;
+ copy;   
+ set("name", "Input Source "+num2str(i+-1*n0));
+ set("injection axis", "x");
+ set("x", -1*(port_distance + R)*cos(theta) + R/2);
+ set("y", (port_distance + R)*(sin(theta)));
+ set("theta", -theta*(180/pi));
+ set("enabled",0);
+}
+select("Input Source Template");
+delete;
+
+#### Add Output Monitors ####
+
+
+ addprofile;   
+ set("name", "Mode Monitor DFT Template");
+ set('monitor type', 'Linear Y');
+ set("x", -port_distance-R+R/2);
+ set("y", 0);
+ set("z",wg_height/2);
+ #set("theta", 0);
+ set("y span", port_width);
+ 
+for(i = m0; i < M/2; i = i+1){
+ theta = asin(i*sqrt((lambda)/(R*M*neff)))*angle_multiplier;
+ copy;   
+ set("name", "Mode Monitor DFT "+num2str(i+-1*n0));
+ set("x", (port_distance + R)*cos(theta) - R/2);
+ set("y", (port_distance + R)*(sin(theta)));
+ #set("theta", theta*(180/pi));
+}
+select("Mode Monitor DFT Template");
+delete;
+
+
+ addmodeexpansion;   
+ set("name", "Mode Monitor Template");
+ set("x", -port_distance-R+R/2);
+ set("y", 0);
+ set("z",wg_height/2);
+ set("theta", 0);
+ set("y span", port_width);
+ 
+
+for(i = m0; i < M/2; i = i+1){
+ select('Mode Monitor Template');
+ theta = asin(i*sqrt((lambda)/(R*M*neff)))*angle_multiplier;
+ copy;   
+ set("name", "Mode Monitor "+num2str(i+-1*n0));
+ set("x", (port_distance + R)*cos(theta) - R/2);
+ set("y", (port_distance + R)*(sin(theta)));
+ set("theta", theta*(180/pi));
+ select("Mode Monitor "+num2str(i+-1*n0));
+ setexpansion('exp ' + num2str(i+-1*n0), 'Mode Monitor DFT ' + num2str(i+-1*n0));
+ 
+}
+select("Mode Monitor Template");
+delete;
+
+####  Transfer Matrix Sweep ####
+break;
+T = matrix(N,M);
+for (i = 0; i < N; i = i+1) {
+   select("Input Source " + num2str(i));
+   set("enabled",1);
+   run;
+   for (j=0; j<M; j = j+1){
+     expansion = getresult("Mode Monitor "+num2str(j),"expansion for exp "+num2str(j));
+     f=expansion.f;
+     SP = sourcepower(f);
+     ?t = abs(expansion.a)^2*expansion.N / ( (1)^2 * SP );
+     T(i+1,j+1) = t;
+   }
+   switchtolayout;
+   select("Input Source " + num2str(i));
+   set("enabled",0);
+}
+
+
+?T;
+
