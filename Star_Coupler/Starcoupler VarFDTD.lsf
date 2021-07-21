@@ -12,7 +12,7 @@ wg_width = 500e-9;
 wg_height = 220e-9;
 #waveguide dimensions
 
-R = 35e-6; 
+R = 25e-6; 
 #Slab reigion width
 
 theta = 8; 
@@ -20,7 +20,7 @@ theta = 8;
 
 use_angle = false; 
 #Calculates the R based on input angle
-taper = true;
+taper = false;
 #turns on tapers
 movie = false;
 monitor = true;
@@ -46,13 +46,17 @@ wg_offset = 50e-9;
 
 main_material = "Si (Silicon) - Palik";
 
-port_distance = 15e-6; 
+port_distance = 25e-6; 
 #distance of ports from free space reigon
 mesh_accuracy = 3;
 #accuracy of FDTD auto mesh
 
 port_width = 2e-6;
 port_height = 2e-6;
+
+grating_layers = 10;
+grating_width = 5e-6;
+
 ###############
 
 #calculates R if use_angle is on
@@ -132,6 +136,30 @@ set("x span", (R*abs(cos(theta_max *pi/180))-R/2)*2);
 set("y span", 2*R*abs(sin(theta_max *pi/180)));
 set("z span",wg_height);
 set("material", main_material);
+
+#### Make edge grating ###
+for(i=1;i <= grating_layers; i=i+1){
+    
+addring;
+set("name", "Grating curve");
+set("x", R/2);
+set("y", 0);
+set("z", wg_height/2);
+set("z span",wg_height);
+set("inner radius", R+grating_width*((2*i-1)/grating_layers));
+set("outer radius", R+grating_width*((2*i)/grating_layers));
+set("theta start", 180-theta_max);
+set("theta stop", 180+theta_max);
+set("material", main_material);    
+  
+copy;
+set('first axis', 'z');
+set('rotation 1', 180);
+set('x',-R/2);
+}
+
+
+
 
 #### Make Input Waveguides ####
 

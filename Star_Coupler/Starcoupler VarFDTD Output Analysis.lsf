@@ -1,0 +1,13 @@
+
+T = matrix(N,M);
+
+   for (j=0; j<M; j = j+1){
+     expansion = getresult("Mode Monitor "+num2str(j),"expansion for exp "+num2str(j));
+     f=expansion.f;
+     SP = sourcepower(f);
+     ?t = abs(expansion.a)^2*expansion.N / ( (1)^2 * SP );
+     T(1,j+1) = t;
+   }
+  ?T;
+   
+   
